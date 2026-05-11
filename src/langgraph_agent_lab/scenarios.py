@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import json
 from pathlib import Path
 
 from .state import Scenario
@@ -18,6 +17,12 @@ def load_scenarios(path: str | Path) -> list[Scenario]:
                 scenarios.append(Scenario.model_validate_json(line))
             except Exception as exc:
                 raise ValueError(f"Invalid scenario at line {line_no}: {exc}") from exc
+    scenario_ids = [scenario.id for scenario in scenarios]
+    duplicates = sorted(
+        {scenario_id for scenario_id in scenario_ids if scenario_ids.count(scenario_id) > 1}
+    )
+    if duplicates:
+        raise ValueError(f"Duplicate scenario ids: {', '.join(duplicates)}")
     if len(scenarios) < 6:
         raise ValueError("At least 6 scenarios are required for grading")
     return scenarios

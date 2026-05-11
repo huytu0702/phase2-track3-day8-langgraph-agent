@@ -1,0 +1,53 @@
+body {
+  background: #101827;
+  color: #e5eefb;
+  font-family: Arial, sans-serif;
+  margin: 0;
+}
+
+main {
+  display: grid;
+  gap: 1rem;
+  margin: 0 auto;
+  max-width: 1100px;
+  padding: 2rem;
+}
+
+header, .panel {
+  background: #182235;
+  border: 1px solid #2f405f;
+  border-radius: 12px;
+  padding: 1rem;
+}
+
+button, input, textarea, select {
+  border-radius: 8px;
+  border: 1px solid #536989;
+  margin: 0.25rem;
+  padding: 0.5rem;
+}
+
+button {
+  background: #4f8cff;
+  color: white;
+  cursor: pointer;
+}
+
+.scenario {
+  align-items: center;
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.25rem 0;
+}
+
+.badge {
+  background: #263755;
+  border-radius: 999px;
+  color: #bcd3ff;
+  padding: 0.15rem 0.5rem;
+}
+
+pre {
+  overflow: auto;
+  white-space: pre-wrap;
+}

@@ -1,3 +1,28 @@
 scenarios_path: data/sample/scenarios.jsonl
-checkpointer: memory
+checkpointer: sqlite
+database_url: outputs/checkpoints.sqlite
 report_path: reports/lab_report.md
+
+llm:
+  provider: openai
+  enabled: true
+  model: gpt-4o-mini
+  timeout_seconds: 30
+  max_retries: 2
+  nodes:
+    classify: true
+    evaluate: true
+    answer: true
+
+fault_injection:
+  enabled: true
+  source: scenario_metadata
+  deterministic: true
+
+approval:
+  mode: interrupt
+  require_human: true
+
+web:
+  host: 127.0.0.1
+  port: 8765

@@ -17,9 +17,13 @@ class ScenarioMetric(BaseModel):
     actual_route: str | None = None
     nodes_visited: int = 0
     retry_count: int = 0
+    max_attempts: int = 0
     interrupt_count: int = 0
     approval_required: bool = False
     approval_observed: bool = False
+    dead_letter_observed: bool = False
+    checkpoint_thread_id: str | None = None
+    resume_success: bool = False
     latency_ms: int = 0
     errors: list[str] = Field(default_factory=list)
 
@@ -34,7 +38,9 @@ class MetricsReport(BaseModel):
     scenario_metrics: list[ScenarioMetric]
 
 
-def metric_from_state(state: dict[str, Any], expected_route: str, approval_required: bool) -> ScenarioMetric:
+def metric_from_state(
+    state: dict[str, Any], expected_route: str, approval_required: bool
+) -> ScenarioMetric:
     events = state.get("events", []) or []
     errors = state.get("errors", []) or []
     actual_route = state.get("route")
@@ -42,7 +48,10 @@ def metric_from_state(state: dict[str, Any], expected_route: str, approval_requi
     nodes = [event.get("node", "unknown") for event in events]
     retry_count = sum(1 for node in nodes if node == "retry")
     interrupt_count = sum(1 for node in nodes if node == "approval")
-    success = actual_route == expected_route and bool(state.get("final_answer") or state.get("pending_question"))
+    dead_letter_observed = "dead_letter" in nodes
+    success = actual_route == expected_route and bool(
+        state.get("final_answer") or state.get("pending_question")
+    )
     if approval_required:
         success = success and approval is not None
     return ScenarioMetric(
@@ -52,9 +61,12 @@ def metric_from_state(state: dict[str, Any], expected_route: str, approval_requi
         actual_route=actual_route,
         nodes_visited=len(nodes),
         retry_count=retry_count,
+        max_attempts=int(state.get("max_attempts", 0) or 0),
         interrupt_count=interrupt_count,
         approval_required=approval_required,
         approval_observed=approval is not None,
+        dead_letter_observed=dead_letter_observed,
+        checkpoint_thread_id=state.get("thread_id"),
         errors=list(errors),
     )
 

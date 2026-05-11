@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>LangGraph Fault-Tolerance Lab</title>
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+  <main>
+    <header>
+      <h1>LangGraph Fault-Tolerance Lab</h1>
+      <p>Scenario runner for routing, retry, dead-letter, HITL, and checkpoint evidence.</p>
+    </header>
+    <section class="panel">
+      <h2>Scenario Catalog</h2>
+      <div id="scenarios"></div>
+    </section>
+    <section class="panel">
+      <h2>Runner</h2>
+      <label>Thread ID <input id="threadId" placeholder="auto-generated if empty"></label>
+      <button id="runSelected">Run selected</button>
+      <button id="runAll">Run all non-HITL</button>
+    </section>
+    <section class="panel">
+      <h2>Expected vs Actual</h2>
+      <pre id="metric">No run yet.</pre>
+    </section>
+    <section class="panel">
+      <h2>Flow Timeline</h2>
+      <ol id="timeline"></ol>
+    </section>
+    <section class="panel">
+      <h2>HITL Panel</h2>
+      <p id="hitlStatus">Run a risky scenario to pause for approval.</p>
+      <pre id="approvalPayload"></pre>
+      <textarea id="comment" placeholder="Approval comment"></textarea>
+      <button id="approve">Approve</button>
+      <button id="reject">Reject</button>
+    </section>
+  </main>
+  <script src="/static/app.js"></script>
+</body>
+</html>
