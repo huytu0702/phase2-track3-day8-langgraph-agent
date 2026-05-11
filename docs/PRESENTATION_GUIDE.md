@@ -70,7 +70,32 @@ flowchart LR
 | `src/langgraph_agent_lab/static/app.js` | Frontend logic để run scenario, approve/reject, render timeline. |
 | `outputs/metrics.json` | Output metrics sau khi chạy batch scenario. |
 
-## 4. Luồng xử lý graph
+## 4. Luồng xử lý ngắn gọn
+
+Luồng xử lý hiện tại có thể tóm tắt như sau:
+
+1. **User chọn scenario trên UI** và bấm Run.
+2. **Frontend gọi HTTP server** qua endpoint `/api/run-scenario`.
+3. **Server gọi Scenario Runner** để load scenario, tạo initial state và build LangGraph.
+4. **LangGraph chạy node `intake`** để normalize query và ghi event đầu tiên.
+5. **Node `classify` chọn route** dựa trên nội dung query và metadata scenario.
+6. Tùy route, workflow đi theo một trong các nhánh:
+   - `simple` → tạo answer → finalize.
+   - `tool` → gọi local tool → evaluate → answer/finalize.
+   - `missing_info` → hỏi thêm thông tin → finalize.
+   - `risky` → chuẩn bị action rủi ro → dừng ở HITL approval.
+   - `error` → chạy retry loop → recover hoặc dead-letter.
+7. **Mỗi node ghi event vào state**, nên UI có thể render Flow Timeline.
+8. **SQLite checkpointer lưu state theo `thread_id`**, đặc biệt quan trọng cho HITL resume.
+9. Nếu workflow bị interrupt ở HITL, **user bấm Approve/Reject** trên UI.
+10. Server gửi `Command(resume=...)` vào LangGraph để workflow chạy tiếp từ checkpoint.
+11. Khi kết thúc, runner tạo **metric** gồm expected route, actual route, retry count, dead-letter, approval và success.
+
+Nói cực ngắn khi thuyết trình:
+
+> UI gửi scenario vào server, server chạy scenario runner, runner đưa state vào LangGraph. Graph classify request rồi route sang answer/tool/clarify/retry/HITL. Mỗi bước ghi event, SQLite giữ checkpoint, cuối cùng UI hiển thị timeline và metrics.
+
+## 5. Luồng xử lý graph
 
 ```mermaid
 flowchart TD
