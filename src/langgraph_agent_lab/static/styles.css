@@ -33,11 +33,29 @@ button {
   cursor: pointer;
 }
 
-.scenario {
+.scenario, .checkpoint {
   align-items: center;
   display: flex;
   gap: 0.5rem;
   padding: 0.25rem 0;
+}
+
+#threadCompare {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  margin: 0.75rem 0;
+}
+
+.compare-card {
+  background: #111b2c;
+  border: 1px solid #3b4f73;
+  border-radius: 10px;
+  padding: 0.75rem;
+}
+
+.compare-card h3 {
+  margin-top: 0;
 }
 
 .badge {

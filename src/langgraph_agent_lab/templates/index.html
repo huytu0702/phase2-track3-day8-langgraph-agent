@@ -38,6 +38,17 @@
       <button id="approve">Approve</button>
       <button id="reject">Reject</button>
     </section>
+    <section class="panel">
+      <h2>Crash Recovery & Time Travel</h2>
+      <p>Use History after running a scenario. To demo crash recovery, restart the server and resume the same Thread ID.</p>
+      <button id="demoTimeTravel">Demo time travel example</button>
+      <button id="loadHistory">Load history</button>
+      <label>Fork Thread ID <input id="forkThreadId" placeholder="auto-generated fork id"></label>
+      <button id="forkReject">Fork selected checkpoint + Reject</button>
+      <pre id="historyStatus">No history loaded.</pre>
+      <div id="threadCompare"></div>
+      <div id="history"></div>
+    </section>
   </main>
   <script src="/static/app.js"></script>
 </body>

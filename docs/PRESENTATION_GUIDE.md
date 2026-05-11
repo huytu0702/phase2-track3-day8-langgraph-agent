@@ -270,6 +270,7 @@ Các vùng chính:
 | Expected vs Actual | Hiển thị metric JSON: expected route, actual route, success, retry count. |
 | Flow Timeline | Hiển thị node timeline từ event log. |
 | HITL Panel | Hiển thị approval payload và nút Approve/Reject. |
+| Crash Recovery & Time Travel | Liệt kê checkpoint theo thread, fork từ checkpoint cũ và demo resume sau restart. |
 
 Backend endpoints hiện có:
 
@@ -280,9 +281,58 @@ POST /api/run-all
 POST /api/resume
 GET  /api/metrics
 GET  /api/state?thread_id=...
+GET  /api/history?thread_id=...
+POST /api/time-travel
 ```
 
-## 9. Metrics dùng để đánh giá
+## 9. Crash recovery và time travel
+
+### Crash recovery demo
+
+Mục tiêu demo: chứng minh workflow không mất state khi server/graph bị dựng lại.
+
+Cách demo nhanh:
+
+1. Chạy UI bằng SQLite checkpointer:
+
+```bash
+.venv/Scripts/python -m langgraph_agent_lab.cli serve-ui --config configs/lab.yaml
+```
+
+2. Chọn scenario risky, ví dụ `S24_risky_send_email`.
+3. Để trống Thread ID hoặc nhập một ID dễ nhớ như `demo-recover`.
+4. Bấm **Run selected** để workflow dừng ở HITL interrupt.
+5. Dừng server rồi chạy lại lệnh `serve-ui`.
+6. Nhập lại đúng Thread ID cũ.
+7. Bấm **Approve** hoặc **Reject**.
+8. Workflow resume từ SQLite checkpoint và tiếp tục đến `finalize`.
+
+Nói khi thuyết trình:
+
+> Đây là crash recovery ở mức workflow state: graph/server có thể được build lại, nhưng SQLite checkpoint vẫn giữ state theo thread_id nên resume vẫn chạy tiếp từ interrupt.
+
+### Time travel demo
+
+Mục tiêu demo: quay lại một checkpoint cũ và fork sang thread mới để thử quyết định khác mà không phá thread gốc.
+
+Trên UI:
+
+1. Chạy risky scenario để dừng ở HITL.
+2. Bấm **Load history** trong panel Crash Recovery & Time Travel.
+3. Chọn checkpoint có `next=approval`.
+4. Bấm Approve cho thread gốc nếu muốn tạo nhánh gốc được duyệt.
+5. Chọn lại checkpoint cũ hoặc dùng history cũ, nhập Fork Thread ID nếu muốn.
+6. Bấm **Fork selected checkpoint + Reject**.
+7. Thread fork sẽ đi nhánh `approval -> clarify -> finalize`, trong khi thread gốc vẫn giữ kết quả approve.
+
+CLI demo tương đương:
+
+```bash
+.venv/Scripts/python -m langgraph_agent_lab.cli history --thread-id demo-recover --config configs/lab.yaml
+.venv/Scripts/python -m langgraph_agent_lab.cli time-travel --source-thread-id demo-recover --checkpoint-id <checkpoint_id> --new-thread-id demo-recover-fork --approve false --config configs/lab.yaml
+```
+
+## 10. Metrics dùng để đánh giá
 
 Mỗi scenario tạo một metric gồm các field chính:
 
@@ -308,7 +358,7 @@ Sau khi chạy batch:
 .venv/Scripts/python -m langgraph_agent_lab.cli validate-metrics --metrics outputs/metrics.json
 ```
 
-## 10. Các lệnh demo
+## 11. Các lệnh demo
 
 ### Chạy test
 
@@ -353,7 +403,7 @@ Sau đó mở:
 http://127.0.0.1:8765
 ```
 
-## 11. Demo script gợi ý khi thuyết trình
+## 12. Demo script gợi ý khi thuyết trình
 
 ### Phần 1 — Giới thiệu vấn đề
 
@@ -428,7 +478,7 @@ Nói:
 
 > Kết quả cuối cùng là một harness có thể mở rộng: chỉ cần thêm scenario mới vào JSONL để kiểm tra thêm edge case. Metrics giúp đánh giá workflow theo route accuracy, retry behavior, dead-letter, HITL và checkpoint evidence.
 
-## 12. Những điểm nên nhấn mạnh
+## 13. Những điểm nên nhấn mạnh
 
 - Không dùng mock approval trong UI demo; risky action dừng thật bằng interrupt.
 - Không dùng FastAPI, backend là Python standard library HTTP server.
@@ -438,12 +488,12 @@ Nói:
 - Runtime vẫn có OpenAI adapter và `.env` loading cho integration thật.
 - Batch runner bỏ qua HITL scenario mặc định để không block automation.
 
-## 13. Giới hạn hiện tại
+## 14. Giới hạn hiện tại
 
 Các điểm có thể nói là future work:
 
 - UI còn đơn giản, chưa có filter nâng cao theo tag/route.
-- Endpoint `/api/history` mới được mô tả trong plan, chưa tách riêng thành history view đầy đủ.
+- History/time-travel UI đã có panel demo cơ bản, nhưng chưa có filter nâng cao theo loại checkpoint.
 - OpenAI integration hiện mới có adapter/config, chưa bắt buộc mọi node gọi LLM trong test suite.
 - Report hiện là bản summary cơ bản, có thể mở rộng thêm confusion matrix và coverage table.
 - Không execute destructive action thật; risky action chỉ ghi evidence trong lab để đảm bảo an toàn.

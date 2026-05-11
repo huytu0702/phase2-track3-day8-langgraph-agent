@@ -11,7 +11,7 @@ import yaml
 
 from .metrics import MetricsReport, write_metrics
 from .report import write_report
-from .runner import resume_thread, run_scenario_by_id
+from .runner import fork_from_checkpoint, list_thread_history, resume_thread, run_scenario_by_id
 from .runner import run_scenarios as run_scenario_batch
 from .web_server import serve
 
@@ -72,6 +72,45 @@ def resume(
         database_url=cfg.get("database_url"),
     )
     typer.echo(json.dumps(state, indent=2))
+
+
+@app.command("history")
+def history(
+    thread_id: Annotated[str, typer.Option("--thread-id")],
+    config: Annotated[Path, typer.Option("--config")] = Path("configs/lab.yaml"),
+) -> None:
+    cfg = load_config(config)
+    checkpoints = list_thread_history(
+        thread_id=thread_id,
+        checkpointer_kind=cfg.get("checkpointer", "memory"),
+        database_url=cfg.get("database_url"),
+    )
+    typer.echo(json.dumps({"thread_id": thread_id, "history": checkpoints}, indent=2))
+
+
+@app.command("time-travel")
+def time_travel(
+    source_thread_id: Annotated[str, typer.Option("--source-thread-id")],
+    checkpoint_id: Annotated[str, typer.Option("--checkpoint-id")],
+    new_thread_id: Annotated[str, typer.Option("--new-thread-id")],
+    approve: Annotated[str | None, typer.Option("--approve")] = None,
+    comment: Annotated[str, typer.Option("--comment")] = "",
+    config: Annotated[Path, typer.Option("--config")] = Path("configs/lab.yaml"),
+) -> None:
+    cfg = load_config(config)
+    approval = None
+    if approve is not None:
+        approved = approve.lower() in {"1", "true", "yes", "y"}
+        approval = {"approved": approved, "reviewer": "cli", "comment": comment}
+    result = fork_from_checkpoint(
+        source_thread_id=source_thread_id,
+        checkpoint_id=checkpoint_id,
+        new_thread_id=new_thread_id,
+        approval=approval,
+        checkpointer_kind=cfg.get("checkpointer", "memory"),
+        database_url=cfg.get("database_url"),
+    )
+    typer.echo(json.dumps(result, indent=2))
 
 
 @app.command("serve-ui")

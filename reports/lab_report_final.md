@@ -36,7 +36,7 @@ flowchart LR
 | `src/langgraph_agent_lab/faults.py` | Implements controlled fault injection from scenario metadata. |
 | `src/langgraph_agent_lab/tools.py` | Provides local lab tools for order/invoice/subscription/risky evidence. |
 | `src/langgraph_agent_lab/persistence.py` | Builds memory or SQLite checkpointer; SQLite uses WAL mode. |
-| `src/langgraph_agent_lab/runner.py` | Runs one scenario or a batch and produces metrics. |
+| `src/langgraph_agent_lab/runner.py` | Runs scenarios, lists checkpoint history, resumes threads and forks checkpoint state. |
 | `src/langgraph_agent_lab/web_server.py` | Serves UI and JSON endpoints with Python standard library HTTP server. |
 | `src/langgraph_agent_lab/metrics.py` | Converts graph state into scenario metrics and aggregate report. |
 
@@ -247,10 +247,29 @@ Recovery evidence:
 - Normal scenario runs write state and events to SQLite.
 - HITL scenarios stop at approval interrupt and keep checkpoint state.
 - Resume uses the same `thread_id` with `Command(resume=approval)`.
+- `/api/history` and the `history` CLI command expose checkpoint history for a thread.
+- `/api/time-travel` and the `time-travel` CLI command fork a selected checkpoint into a new thread.
 - Automated tests verify:
   - SQLite database creation.
   - Event history survives graph rebuild.
   - Interrupted risky workflow resumes from SQLite with approval payload.
+  - Missing-thread resume fails with a clear error.
+  - Checkpoint forks can take a different approval branch without changing the original thread.
+
+Crash recovery demo evidence:
+
+1. Run a risky scenario until it stops at HITL interrupt.
+2. Stop and restart the UI server or rebuild the graph process.
+3. Use the same `thread_id` and send approval through `/api/resume` or CLI `resume`.
+4. The workflow continues from SQLite checkpoint to `finalize`.
+
+Time-travel demo evidence:
+
+1. Use `list_thread_history(...)` or `/api/history?thread_id=...` to list checkpoint IDs.
+2. Select a checkpoint whose `next_nodes` contains `approval`.
+3. Use `fork_from_checkpoint(...)` or `/api/time-travel` to create a new thread from that checkpoint.
+4. Resume the fork with a different approval decision.
+5. The original thread history remains unchanged, while the fork follows a different branch.
 
 HITL resume sequence:
 
@@ -295,16 +314,21 @@ Completed extension work:
    - Risky routes pause with LangGraph interrupt.
    - UI approve/reject resumes workflow from checkpoint.
 
-5. **HTML/CSS/JS dashboard**
+5. **Crash recovery and time travel**
+   - Added checkpoint history listing by `thread_id`.
+   - Added crash-recovery demo path: stop after HITL interrupt, restart server/graph, resume the same thread from SQLite.
+   - Added checkpoint fork support so a previous checkpoint can branch into a new thread with a different approval decision.
+
+6. **HTML/CSS/JS dashboard**
    - Scenario catalog.
    - Runner controls.
    - Expected vs actual metrics.
    - Flow timeline.
    - HITL approval panel.
 
-6. **Metrics and verification**
+7. **Metrics and verification**
    - `outputs/metrics.json` includes route accuracy, retries, dead-letter, approval and checkpoint thread ID.
-   - Tests cover scenario suite, routing, graph smoke, fault tolerance, persistence, HITL, runner, CLI and web helpers.
+   - Tests cover scenario suite, routing, graph smoke, fault tolerance, persistence, HITL, runner, CLI, history/time-travel and web helpers.
 
 Verification commands run successfully:
 
@@ -319,7 +343,7 @@ Verification commands run successfully:
 
 Latest results:
 
-- Pytest: 40 tests passed.
+- Pytest: 48 tests passed.
 - Ruff: all checks passed.
 - Mypy: no issues found.
 - Coverage: 80%.
@@ -334,9 +358,10 @@ If I had one more day, I would productionize these areas first:
    - Add scenario coverage grouped by route and tag.
    - Add separate HITL evidence export from UI runs.
 
-2. **Better UI filtering and history**
+2. **Better UI filtering and checkpoint inspection**
    - Filter scenario catalog by route, tag, retry, dead-letter and HITL.
-   - Add dedicated checkpoint/history panel using a real `/api/history` endpoint.
+   - Add checkpoint diff view between source thread and forked thread.
+   - Add copy buttons for thread IDs and checkpoint IDs during live demos.
 
 3. **Real LLM structured classification**
    - Use OpenAI for classify/evaluate/answer nodes behind config.
@@ -350,6 +375,6 @@ If I had one more day, I would productionize these areas first:
    - Improve error messages without leaking internal details.
 
 5. **Advanced LangGraph features**
-   - Add time-travel debugging.
    - Add fan-out/fan-in scenarios for multi-tool tasks.
    - Add richer checkpoint state inspection in UI.
+   - Export time-travel traces as standalone demo artifacts.

@@ -7,7 +7,13 @@ from pathlib import Path
 from typing import Any
 from urllib.parse import parse_qs, urlparse
 
-from .runner import resume_thread, run_scenario_by_id, run_scenarios
+from .runner import (
+    fork_from_checkpoint,
+    list_thread_history,
+    resume_thread,
+    run_scenario_by_id,
+    run_scenarios,
+)
 from .scenarios import load_scenarios
 
 PACKAGE_DIR = Path(__file__).parent
@@ -73,6 +79,15 @@ class LabRequestHandler(BaseHTTPRequestHandler):
                 *create_api_response({"thread_id": query.get("thread_id", [""])[0]})
             )
             return
+        if parsed.path == "/api/history":
+            query = parse_qs(parsed.query)
+            history = list_thread_history(
+                thread_id=query.get("thread_id", [""])[0],
+                checkpointer_kind=self.checkpointer_kind,
+                database_url=self.database_url,
+            )
+            self.write_response(*create_api_response({"history": history}))
+            return
         self.write_response(*create_error_response("Not found", 404))
 
     def do_POST(self) -> None:
@@ -110,6 +125,17 @@ class LabRequestHandler(BaseHTTPRequestHandler):
                     database_url=self.database_url,
                 )
                 self.write_response(*create_api_response({"state": state}))
+                return
+            if parsed.path == "/api/time-travel":
+                fork_result = fork_from_checkpoint(
+                    source_thread_id=str(data["source_thread_id"]),
+                    checkpoint_id=str(data["checkpoint_id"]),
+                    new_thread_id=str(data["new_thread_id"]),
+                    approval=data.get("approval"),
+                    checkpointer_kind=self.checkpointer_kind,
+                    database_url=self.database_url,
+                )
+                self.write_response(*create_api_response(fork_result))
                 return
             if parsed.path == "/api/run-all":
                 report = run_scenarios(
