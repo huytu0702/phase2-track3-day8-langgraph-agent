@@ -29,7 +29,7 @@ ERROR_KEYWORDS = (
     "crash",
     "corruption",
 )
-MISSING_INFO_PHRASES = ("fix it", "this", "that", "it is", "help me with")
+MISSING_INFO_PHRASES = ("fix it", "handle it", "this", "that", "it is", "help me with")
 NEGATED_RISK_PHRASES = ("do not want to delete", "don't delete", "do not delete")
 
 

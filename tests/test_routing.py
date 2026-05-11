@@ -1,3 +1,4 @@
+from langgraph_agent_lab.nodes import classify_node
 from langgraph_agent_lab.routing import (
     route_after_approval,
     route_after_classify,
@@ -26,3 +27,7 @@ def test_route_after_retry_bound():
 def test_route_after_evaluate():
     assert route_after_evaluate({"evaluation_result": "success"}) == "answer"
     assert route_after_evaluate({"evaluation_result": "needs_retry"}) == "retry"
+
+
+def test_classify_missing_info_for_handle_it_phrase():
+    assert classify_node({"query": "Please handle it"})["route"] == Route.MISSING_INFO.value

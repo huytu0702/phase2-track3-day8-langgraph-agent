@@ -133,6 +133,18 @@ Metrics were regenerated from `outputs/metrics.json` on 2026-05-11.
 
 Batch mode intentionally skips HITL scenarios so automated scenario runs do not block waiting for manual approval. HITL interrupt/resume is verified separately through UI and tests.
 
+Hidden suite (`outputs/metrics-hidden.json`) was re-run after classifier fix and now passes fully:
+
+| Hidden metric | Value |
+|---|---:|
+| Total hidden scenarios | 10 |
+| Success rate | 100.00% |
+| Average nodes visited | 5.9 |
+| Total retries | 5 |
+| Total interrupts | 0 |
+
+Notable fix: scenario `G06_missing` (`"Please handle it"`) now routes correctly to `missing_info` (actual = expected).
+
 | Scenario | Expected route | Actual route | Success | Retries | Interrupts |
 |---|---|---|---:|---:|---:|
 | S01_simple | simple | simple | true | 0 | 0 |
